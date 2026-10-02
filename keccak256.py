@@ -4,9 +4,10 @@ No dependencies — just the standard library. Great for learning how the
 sponge construction and the Keccak-f[1600] permutation actually work.
 
 Usage:
-    from keccak256 import keccak_256, keccak_256_hex
+    from keccak256 import keccak_256, keccak_256_hex, keccak_256_file_hex
 
     keccak_256_hex(b"hello")   # -> 1c8aff950685c2ed4bc3172f34773b3a4b9a5b6a...
+    keccak_256_file_hex("some_file.bin")  # hash a file
 """
 
 MASK64 = 0xFFFFFFFFFFFFFFFF
@@ -92,10 +93,22 @@ def keccak_256_hex(data: bytes) -> str:
     return keccak_256(data).hex()
 
 
+def keccak_256_file(path) -> bytes:
+    """Keccak-256 digest of a file's contents (read in binary)."""
+    with open(path, "rb") as f:
+        return keccak_256(f.read())
+
+
+def keccak_256_file_hex(path) -> str:
+    return keccak_256_file(path).hex()
+
+
 def selftest():
     vectors = {
         b"": "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
         b"abc": "4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45",
+        b"hello ethereum": "b466f598d977fdbe7eea49ac6be9080b8f74f450c2f7ad3d42b98c54f9d07cc9",
+        b"a" * 200: "96ea54061def936c4be90b518992fdc6f12f535068a256229aca54267b4d084d",  # multi-block input
     }
     ok = True
     for data, want in vectors.items():
@@ -114,5 +127,8 @@ if __name__ == "__main__":
 
     if len(sys.argv) == 2 and sys.argv[1] == "--selftest":
         raise SystemExit(0 if selftest() else 1)
+    if len(sys.argv) == 3 and sys.argv[1] == "--file":
+        print(keccak_256_file_hex(sys.argv[2]))
+        raise SystemExit(0)
     msg = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else "hello ethereum"
     print(keccak_256_hex(msg.encode()))
